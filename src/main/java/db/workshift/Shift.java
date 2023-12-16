@@ -1,9 +1,9 @@
 package db.workshift;
 
+import db.workshift.users.User;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.Locale;
 
 public class Shift {
 

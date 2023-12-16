@@ -1,5 +1,6 @@
 package db.workshift
 
+import db.workshift.users.User
 import spock.lang.Specification
 import spock.lang.Unroll
 
