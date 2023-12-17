@@ -25,12 +25,16 @@ public class User {
         return "User[id=%s, name='%s']".formatted(id, name);
     }
 
-    static User create(String name) {
+    public static User create(String name) {
         return new User(name);
     }
 
     public String getName() {
         return name;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
 }

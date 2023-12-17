@@ -1,29 +1,39 @@
 package db.workshift;
 
 import db.workshift.users.User;
+import jakarta.persistence.*;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
+@Entity
 public class Shop {
 
     private static final int TIME_WINDOW_24_HOURS = 24;
     private static final int MAXIMUM_ALLOWED_USER_HOURS_IN_TIME_WINDOW = 8;
 
+    @OneToMany
     private final Set<User> employees = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL)
     private final Set<Shift> shifts = new HashSet<>();
 
-    private Shop() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
+    protected Shop() {
     }
 
     static Shop create() {
         return new Shop();
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     void addUser(User user) {
@@ -44,6 +54,13 @@ public class Shop {
                 .filter(Shift::unAssigned)
                 .sorted(Comparator.comparing(Shift::getStart))
                 .collect(Collectors.toList());
+    }
+
+    public Optional<Shift> findShift(UUID uuid) {
+        return getAvailableShifts()
+                .stream()
+                .filter(shift -> shift.getId().equals(uuid))
+                .findFirst();
     }
 
     List<Shift> getAssignedShifts(User user) {
@@ -68,9 +85,11 @@ public class Shop {
         if (totalHoursIn24HourWindow.plus(shift.getDuration()).toHours() > MAXIMUM_ALLOWED_USER_HOURS_IN_TIME_WINDOW) {
             throw new HoursExceededException();
         }
-
-        shift.assign(user);
     }
 
+    @Override
+    public String toString() {
+        return "Shop[id=%s, employees='%s', shifts='%s']".formatted(id, employees.toString(), shifts.toString());
+    }
 
 }
