@@ -8,6 +8,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.Month
+import java.util.stream.IntStream
 
 @Unroll
 class ShopSpec extends Specification {
@@ -118,6 +119,34 @@ class ShopSpec extends Specification {
         8            || 7
         8            || 6
         7            || 5
+    }
+
+    void 'user not allowed to work in a shop for more than 5 days in a row'() {
+        given: 'a shop with a user and available shifts'
+        Shop shop = Shop.create()
+        shop.addUser(USER_BENT)
+        addShifts(shop, MIDNIGHT_DEC_17_2023, Duration.ofHours(24 * 7), EIGHT_HOURS)
+
+        expect: 'available shifts'
+        List<Shift> shifts = shop.getAvailableShifts()
+
+        when: 'assign user to shifts five days in a row'
+        List<Shift> onePerDay = IntStream.range(0, shifts.size())
+                .filter(n -> n % 3 == 0)
+                .mapToObj(shifts::get)
+                .toList();
+        onePerDay.take(5).each {
+            shop.assignUserToShift(USER_BENT, it)
+        }
+
+        then: 'all good'
+        noExceptionThrown()
+
+        when: 'assign user to other shift exceeding 5 days in a row'
+        shop.assignUserToShift(USER_BENT, onePerDay.get(5))
+
+        then: 'ikke tilladt'
+        thrown(DaysInRowExceededException)
     }
 
     private static Shop addShifts(

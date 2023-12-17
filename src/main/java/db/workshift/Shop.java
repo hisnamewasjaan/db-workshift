@@ -71,7 +71,41 @@ public class Shop {
                 .collect(Collectors.toList());
     }
 
-    void assignUserToShift(User user, Shift shift) throws HoursExceededException {
+    void assignUserToShift(User user, Shift shift) throws HoursExceededException, DaysInRowExceededException {
+        validate24HourWindowRule(user, shift);
+        validate5DaysInRowRule(user, shift);
+
+        shift.assign(user);
+    }
+
+    private void validate5DaysInRowRule(User user, Shift shift) throws DaysInRowExceededException {
+        List<Shift> assignedShifts = getAssignedShifts(user);
+
+        int daysAfter = 0;
+        LocalDate dayAfter = shift.getStart().toLocalDate().plusDays(1);
+        while (hasShiftOnDay(assignedShifts, dayAfter)) {
+            daysAfter++;
+            dayAfter = dayAfter.plusDays(1);
+        }
+
+        int daysBefore = 0;
+        LocalDate dayBefore = shift.getStart().toLocalDate().minusDays(1);
+        while (hasShiftOnDay(assignedShifts, dayBefore)) {
+            daysBefore++;
+            dayBefore = dayBefore.minusDays(1);
+        }
+
+        if (daysBefore + daysAfter + 1 > 5) {
+            throw new DaysInRowExceededException();
+        }
+
+    }
+
+    private boolean hasShiftOnDay(List<Shift> assignedShifts, LocalDate day) {
+        return assignedShifts.stream().anyMatch(shift -> shift.getStart().toLocalDate().equals(day));
+    }
+
+    private void validate24HourWindowRule(User user, Shift shift) throws HoursExceededException {
         Period window24Hours = new Period(
                 shift.getStart().minusHours(TIME_WINDOW_24_HOURS - shift.getDuration().toHours()),
                 shift.getStart().plusHours(TIME_WINDOW_24_HOURS));
